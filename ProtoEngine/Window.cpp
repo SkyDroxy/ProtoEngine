@@ -28,12 +28,12 @@ Window::Window(int width, int height, const char* name)
 	winRect.right = width + winRect.left;
 	winRect.top = 0;
 	winRect.bottom = height + winRect.top;
-	AdjustWindowRect(&winRect, WS_CAPTION | WS_MINIMIZEBOX | WS_SYSMENU | WS_MAXIMIZEBOX | WS_THICKFRAME, FALSE);
+	AdjustWindowRect(&winRect, WS_CAPTION | WS_SYSMENU | WS_THICKFRAME, FALSE);
 
 	hWnd = CreateWindow(
 		windowName, name,
 		WS_OVERLAPPEDWINDOW |
-		WS_CAPTION | WS_MINIMIZEBOX | WS_SYSMENU | WS_MAXIMIZEBOX,
+		WS_CAPTION | WS_SYSMENU,
 		CW_USEDEFAULT, CW_USEDEFAULT, winRect.right - winRect.left, winRect.bottom - winRect.top,
 		nullptr, nullptr, hInstance, this
 	);
@@ -75,6 +75,7 @@ LRESULT __stdcall Window::WindowProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM 
 		case WM_COMMAND:
 		{
 			int wmId = LOWORD(wParam);
+
 			// Gérer les sélections de menu ici
 			switch (wmId)
 			{
@@ -83,7 +84,9 @@ LRESULT __stdcall Window::WindowProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM 
 				break;
 			case IDM_FILE_OPEN:
 			{
+				// Code pour le menu "Open"
 				OPENFILENAMEW ofn;
+				
 				wchar_t szFile[MAX_PATH] = L"";
 
 				ZeroMemory(&ofn, sizeof(ofn));
@@ -104,8 +107,59 @@ LRESULT __stdcall Window::WindowProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM 
 			}
 			break;
 			case IDM_FILE_SAVE:
+			{
 				// Code pour le menu "Save"
-				break;
+				OPENFILENAMEW ofn;
+
+				wchar_t szFile[MAX_PATH] = L"";
+
+				ZeroMemory(&ofn, sizeof(ofn));
+				ofn.lStructSize = sizeof(ofn);
+				ofn.hwndOwner = hWnd;
+				ofn.lpstrFile = szFile;
+				ofn.lpstrFile[0] = L'\0';
+				ofn.nMaxFile = sizeof(szFile);
+				ofn.lpstrFilter = L"Skymunt Project Files (*.skmtp)\0*.skmtp\0All Files (*.*)\0*.*\0";
+				ofn.nFilterIndex = 1;
+				ofn.lpstrTitle = L"Select a Skymunt Project File";
+				ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST;
+
+				if (GetSaveFileNameW(&ofn) == TRUE)
+				{
+					// Vérifie si l'extension est déjà présente dans le nom de fichier
+					wchar_t desiredExtension[] = L".skmtp";
+					size_t extensionLength = wcslen(desiredExtension);
+
+					size_t filenameLength = wcslen(szFile);
+					bool hasExtension = (filenameLength >= extensionLength &&
+						wcscmp(szFile + filenameLength - extensionLength, desiredExtension) == 0);
+
+					// Si l'extension n'est pas présente, l'ajouter
+					if (!hasExtension)
+					{
+						wcscat_s(szFile, MAX_PATH, desiredExtension);
+					}
+
+					// Utilisez le chemin d'accès récupéré pour enregistrer votre fichier
+					// Utilisez szFile modifié pour inclure l'extension
+					// Exemple : Ouverture du fichier pour écriture
+					FILE* file;
+					_wfopen_s(&file, szFile, L"wb"); // Utilisation de "wb" pour une écriture binaire, ajustez selon votre besoin
+
+					if (file != nullptr)
+					{
+						// Écriture dans le fichier si nécessaire
+						fclose(file); // Assurez-vous de fermer le fichier après avoir terminé
+					}
+					else
+					{
+						// Gestion des erreurs lors de l'ouverture du fichier
+					}
+				}
+
+
+			}
+			break;
 			case IDM_FILE_EXIT:
 				// Code pour le menu "Exit"
 				PostQuitMessage(0);
